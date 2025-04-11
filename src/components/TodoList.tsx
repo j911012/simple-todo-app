@@ -1,10 +1,12 @@
 import { useState } from "react";
 import TodoItem from "@/components/TodoItem";
-import type { TodoList } from "@/types/todo";
+import type { Todo, TodoList } from "@/types/todo";
 
 export default function TodoList() {
   const [todos, setTodos] = useState<TodoList>([]);
   const [inputValue, setInputValue] = useState("");
+
+  console.log(todos);
 
   // 新しいタスクを追加する関数
   const addTodo = () => {
@@ -18,6 +20,13 @@ export default function TodoList() {
 
     setTodos((prevTodos) => [...prevTodos, newTodo]); // 新しいタスクを追加
     setInputValue(""); // 入力フィールドをクリア
+  };
+
+  // タスクを更新する関数
+  const updateTodo = (updatedTodo: Todo) => {
+    setTodos((prevTodos) =>
+      prevTodos.map((todo) => (todo.id === updatedTodo.id ? updatedTodo : todo))
+    );
   };
 
   // フォームの送信を処理する関数
@@ -41,7 +50,7 @@ export default function TodoList() {
           </div>
         </form>
         {todos.map((todo) => (
-          <TodoItem key={todo.id} todo={todo} />
+          <TodoItem key={todo.id} todo={todo} updateTodo={updateTodo} />
         ))}
       </div>
     </section>
