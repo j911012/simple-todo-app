@@ -7,8 +7,15 @@ describe("TodoItem コンポーネント", () => {
   it("タスクのタイトルが正しく表示される", () => {
     const mockTodo = { id: "1", title: "テストタスク", completed: false };
     const mockUpdateTodo = vi.fn();
+    const mockDeleteTodo = vi.fn();
 
-    render(<TodoItem todo={mockTodo} updateTodo={mockUpdateTodo} />);
+    render(
+      <TodoItem
+        todo={mockTodo}
+        updateTodo={mockUpdateTodo}
+        deleteTodo={mockDeleteTodo}
+      />
+    );
 
     const inputElement = screen.getByDisplayValue("テストタスク");
     expect(inputElement).toBeInTheDocument();
@@ -17,8 +24,15 @@ describe("TodoItem コンポーネント", () => {
   it("タイトルを変更してフォーカスを外すと updateTodo が呼び出される", () => {
     const mockTodo = { id: "1", title: "テストタスク", completed: false };
     const mockUpdateTodo = vi.fn();
+    const mockDeleteTodo = vi.fn();
 
-    render(<TodoItem todo={mockTodo} updateTodo={mockUpdateTodo} />);
+    render(
+      <TodoItem
+        todo={mockTodo}
+        updateTodo={mockUpdateTodo}
+        deleteTodo={mockDeleteTodo}
+      />
+    );
 
     const inputElement = screen.getByDisplayValue("テストタスク");
     fireEvent.change(inputElement, { target: { value: "更新されたタスク" } });
