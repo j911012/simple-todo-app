@@ -53,18 +53,33 @@ export default function TodoItem({
     handleSave(); // タスクを保存
   };
 
+  // 完了状態を切り替える関数
+  const toggleCompleted = () => {
+    const updatedTodo = {
+      ...todo,
+      completed: !todo.completed,
+    };
+
+    updateTodo(updatedTodo);
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
       className="flex items-center gap-3 border border-gray-300 rounded-xl px-6 py-4 shadow-md bg-white"
     >
-      <Checkbox className="rounded-full size-5 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500" />
+      <Checkbox
+        checked={todo.completed}
+        onCheckedChange={toggleCompleted}
+        className="rounded-full size-5 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
+      />
       <input
         ref={inputRef} // 入力フィールドに参照を設定
         type="text"
         value={editedTitle}
         className={cn(
-          "flex-1 outline-none bg-transparent text-gray-800 placeholder-gray-400"
+          "flex-1 outline-none bg-transparent text-gray-800 placeholder-gray-400",
+          todo.completed && "line-through text-gray-400" // 完了状態のスタイル
         )}
         onChange={(e) => setEditedTitle(e.target.value)}
         onBlur={handleBlur}
@@ -73,6 +88,7 @@ export default function TodoItem({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
+            data-testid={`menu-button-${todo.id}`}
             className="w-5 h-5 text-gray-400 hover:text-indigo-500 cursor-pointer transition-colors"
           >
             <MoreHorizontal />
@@ -81,6 +97,7 @@ export default function TodoItem({
         <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
           <DropdownMenuItem
             onClick={() => deleteTodo(todo.id)}
+            data-testid={`delete-button-${todo.id}`}
             className="text-gray-400 cursor-pointer hover:text-red-500"
           >
             Delete
