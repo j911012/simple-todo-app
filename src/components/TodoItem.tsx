@@ -3,13 +3,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Todo } from "@/types/todo";
 import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
 
 type TodoItemProps = {
   todo: Todo;
   updateTodo: (updatedTodo: Todo) => void;
+  deleteTodo: (id: string) => void;
 };
 
-export default function TodoItem({ todo, updateTodo }: TodoItemProps) {
+export default function TodoItem({
+  todo,
+  updateTodo,
+  deleteTodo,
+}: TodoItemProps) {
   const [editedTitle, setEditedTitle] = useState(todo.title);
   const inputRef = useRef<HTMLInputElement>(null); // 入力フィールドへの参照を作成
 
@@ -58,7 +69,24 @@ export default function TodoItem({ todo, updateTodo }: TodoItemProps) {
         onChange={(e) => setEditedTitle(e.target.value)}
         onBlur={handleBlur}
       />
-      <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-indigo-500 cursor-pointer transition-colors" />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="w-5 h-5 text-gray-400 hover:text-indigo-500 cursor-pointer transition-colors"
+          >
+            <MoreHorizontal />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
+          <DropdownMenuItem
+            onClick={() => deleteTodo(todo.id)}
+            className="text-gray-400 cursor-pointer hover:text-red-500"
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </form>
   );
 }
