@@ -2,9 +2,15 @@ import { useState } from "react";
 import TodoItem from "@/components/TodoItem";
 import type { Todo, TodoList } from "@/types/todo";
 
-export default function TodoList() {
-  const [todos, setTodos] = useState<TodoList>([]);
+type TodoListProps = {
+  initialTodos?: Todo[]; // テストでモックデータを渡す際に使用
+};
+
+export default function TodoList({ initialTodos = [] }: TodoListProps) {
+  const [todos, setTodos] = useState<TodoList>(initialTodos);
   const [inputValue, setInputValue] = useState("");
+
+  console.log(todos);
 
   // 新しいタスクを追加する関数
   const addTodo = () => {
