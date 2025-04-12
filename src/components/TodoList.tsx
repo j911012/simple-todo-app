@@ -20,6 +20,7 @@ export default function TodoList({ initialTodos = [] }: TodoListProps) {
       id: crypto.randomUUID(),
       title: inputValue,
       completed: false,
+      flagged: false,
     };
 
     setTodos((prevTodos) => [...prevTodos, newTodo]); // 新しいタスクを追加

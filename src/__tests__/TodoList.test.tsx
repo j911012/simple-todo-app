@@ -173,7 +173,7 @@ describe("メニュー操作（3点ボタン）", () => {
     expect(menu).toBeInTheDocument();
   });
 
-  it("メニューに「Delete」が表示されること", async () => {
+  it("メニュー削除ボタンが表示されること", async () => {
     render(<TodoList />);
     const input = screen.getByPlaceholderText("新しいタスクを追加");
 
@@ -185,15 +185,17 @@ describe("メニュー操作（3点ボタン）", () => {
     const menuButton = screen.getByRole("button");
     await userEvent.click(menuButton);
 
-    // メニュー内に「Delete」が表示されることを確認
-    const deleteOption = screen.getByText("Delete");
+    // メニュー内に削除ボタンが表示されることを確認
+    const deleteOption = screen.getByRole("menuitem", { name: /delete/i });
     expect(deleteOption).toBeInTheDocument();
   });
 });
 
 describe("タスク削除機能", () => {
   it("Deleteボタンを押すと削除されること", async () => {
-    const mockTodos = [{ id: "1", title: "タスク1", completed: false }];
+    const mockTodos = [
+      { id: "1", title: "タスク1", completed: false, flagged: false },
+    ];
 
     render(<TodoList initialTodos={mockTodos} />);
 
@@ -211,9 +213,9 @@ describe("タスク削除機能", () => {
 
   it("複数タスク中、指定したタスクのみが削除されること", async () => {
     const mockTodos = [
-      { id: "1", title: "タスク1", completed: false },
-      { id: "2", title: "タスク2", completed: false },
-      { id: "3", title: "タスク3", completed: false },
+      { id: "1", title: "タスク1", completed: false, flagged: false },
+      { id: "2", title: "タスク2", completed: false, flagged: false },
+      { id: "3", title: "タスク3", completed: false, flagged: false },
     ];
     render(<TodoList initialTodos={mockTodos} />);
 
@@ -229,5 +231,45 @@ describe("タスク削除機能", () => {
     // 他のタスクが残っていることを確認
     expect(screen.getByDisplayValue("タスク1")).toBeInTheDocument();
     expect(screen.getByDisplayValue("タスク3")).toBeInTheDocument();
+  });
+});
+
+describe("フラグ機能", () => {
+  it("フラグボタンをクリックするとフラグが立つこと", async () => {
+    const mockTodos = [
+      { id: "1", title: "タスク1", completed: false, flagged: false },
+    ];
+    render(<TodoList initialTodos={mockTodos} />);
+
+    // 3点ボタンをクリックしてメニューを表示
+    const menuButton = screen.getByTestId("menu-button-1");
+    await userEvent.click(menuButton);
+
+    // フラグボタンをクリック
+    const flagButton = screen.getByTestId("flag-button-1");
+    await userEvent.click(flagButton);
+
+    // フラグが立っていることを確認
+    const flagIcon = screen.getByRole("icon", { name: /flag/i });
+    expect(flagIcon).toBeInTheDocument();
+  });
+
+  it("フラグを取り消すと旗アイコンが消えること", async () => {
+    const mockTodos = [
+      { id: "1", title: "タスク1", completed: false, flagged: true },
+    ];
+    render(<TodoList initialTodos={mockTodos} />);
+
+    // 3点ボタンをクリックしてメニューを表示
+    const menuButton = screen.getByTestId("menu-button-1");
+    await userEvent.click(menuButton);
+
+    // フラグボタンをクリック
+    const flagButton = screen.getByTestId("flag-button-1");
+    await userEvent.click(flagButton);
+
+    // フラグが取り消されていることを確認
+    const flagIcon = screen.queryByRole("icon", { name: /flag/i });
+    expect(flagIcon).not.toBeInTheDocument();
   });
 });
