@@ -22,3 +22,24 @@ describe("TodoList コンポーネント", () => {
     expect(todoItem).toBeInTheDocument();
   });
 });
+it("タスクを削除するとリストから消える", () => {
+  render(<TodoList />);
+
+  const inputElement = screen.getByPlaceholderText("新しいタスクを追加");
+  const formElement = inputElement.closest("form");
+
+  // タスクを追加
+  fireEvent.change(inputElement, { target: { value: "削除するタスク" } });
+  fireEvent.submit(formElement!);
+
+  // タスクがリストに表示されていることを確認
+  const todoItem = screen.getByDisplayValue("削除するタスク");
+  expect(todoItem).toBeInTheDocument();
+
+  // 削除ボタンをクリック
+  const deleteButton = screen.getByText("Delete");
+  fireEvent.click(deleteButton);
+
+  // タスクがリストから消えていることを確認
+  expect(screen.queryByDisplayValue("削除するタスク")).not.toBeInTheDocument();
+});
