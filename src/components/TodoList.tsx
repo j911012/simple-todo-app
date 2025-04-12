@@ -6,8 +6,6 @@ export default function TodoList() {
   const [todos, setTodos] = useState<TodoList>([]);
   const [inputValue, setInputValue] = useState("");
 
-  console.log(todos);
-
   // 新しいタスクを追加する関数
   const addTodo = () => {
     if (inputValue.trim() === "") return; // 空の入力は無視
@@ -20,6 +18,11 @@ export default function TodoList() {
 
     setTodos((prevTodos) => [...prevTodos, newTodo]); // 新しいタスクを追加
     setInputValue(""); // 入力フィールドをクリア
+  };
+
+  // タスクを削除する関数
+  const deleteTodo = (id: string) => {
+    setTodos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
   };
 
   // タスクを更新する関数
@@ -50,7 +53,12 @@ export default function TodoList() {
           </div>
         </form>
         {todos.map((todo) => (
-          <TodoItem key={todo.id} todo={todo} updateTodo={updateTodo} />
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            updateTodo={updateTodo}
+            deleteTodo={deleteTodo}
+          />
         ))}
       </div>
     </section>
