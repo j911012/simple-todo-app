@@ -46,28 +46,33 @@ export default function TodoList({ initialTodos = [] }: TodoListProps) {
   };
 
   return (
-    <section className="p-4">
-      <div className="space-y-4 max-w-xl mx-auto">
-        <form onSubmit={handleSubmit}>
-          <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-6 py-4 shadow-md bg-white">
+    <div className="relative h-screen ml-64">
+      <div className="fixed top-0 left-64 w-[calc(100%-16rem)] shadow-md p-4 z-10 bg-gray-100">
+        <form onSubmit={handleSubmit} className="max-w-[36rem] mx-auto">
+          <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-3 bg-white">
             <input
               type="text"
               value={inputValue}
               placeholder="新しいタスクを追加"
               className="flex-1 outline-none bg-transparent text-gray-800 placeholder-gray-400"
-              onChange={(e) => setInputValue(e.target.value)} // 入力値を更新
+              onChange={(e) => setInputValue(e.target.value)}
             />
           </div>
         </form>
-        {todos.map((todo) => (
-          <TodoItem
-            key={todo.id}
-            todo={todo}
-            updateTodo={updateTodo}
-            deleteTodo={deleteTodo}
-          />
-        ))}
       </div>
-    </section>
+
+      <div className="pt-24 h-[calc(100vh-80px)] overflow-y-auto p-4">
+        <div className="max-w-[36rem] mx-auto space-y-4">
+          {todos.map((todo) => (
+            <TodoItem
+              key={todo.id}
+              todo={todo}
+              updateTodo={updateTodo}
+              deleteTodo={deleteTodo}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
