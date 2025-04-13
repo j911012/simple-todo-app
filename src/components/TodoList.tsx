@@ -34,6 +34,7 @@ export default function TodoList({ initialTodos = [] }: TodoListProps) {
       id: crypto.randomUUID(),
       title: inputValue,
       completed: false,
+      flagged: false,
     };
 
     const updatedTodos = [...todos, newTodo];
@@ -74,18 +75,23 @@ export default function TodoList({ initialTodos = [] }: TodoListProps) {
               value={inputValue}
               placeholder="新しいタスクを追加"
               className="flex-1 outline-none bg-transparent text-gray-800 placeholder-gray-400"
-              onChange={(e) => setInputValue(e.target.value)} // 入力値を更新
+              onChange={(e) => setInputValue(e.target.value)}
             />
           </div>
         </form>
-        {todos.map((todo) => (
-          <TodoItem
-            key={todo.id}
-            todo={todo}
-            updateTodo={updateTodo}
-            deleteTodo={deleteTodo}
-          />
-        ))}
+      </div>
+
+      <div className="pt-24 h-[calc(100vh-80px)] overflow-y-auto p-4">
+        <div className="max-w-[36rem] mx-auto space-y-4">
+          {todos.map((todo) => (
+            <TodoItem
+              key={todo.id}
+              todo={todo}
+              updateTodo={updateTodo}
+              deleteTodo={deleteTodo}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

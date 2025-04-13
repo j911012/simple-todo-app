@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Todo } from "@/types/todo";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Flag, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -63,10 +63,20 @@ export default function TodoItem({
     updateTodo(updatedTodo);
   };
 
+  // フラグ状態を切り替える関数
+  const toggleFlagged = () => {
+    const updatedTodo = {
+      ...todo,
+      flagged: !todo.flagged,
+    };
+
+    updateTodo(updatedTodo);
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-3 border border-gray-300 rounded-xl px-6 py-4 shadow-md bg-white"
+      className="relative flex items-center gap-3 border border-gray-300 rounded-xl pl-6 pr-8 py-4 shadow-md bg-white"
     >
       <Checkbox
         checked={todo.completed}
@@ -94,16 +104,32 @@ export default function TodoItem({
             <MoreHorizontal />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-white shadow-md rounded-md p-2">
+        <DropdownMenuContent className="flex items-center gap-2 bg-white shadow-md rounded-md p-2 z-10">
           <DropdownMenuItem
             onClick={() => deleteTodo(todo.id)}
             data-testid={`delete-button-${todo.id}`}
-            className="text-gray-400 cursor-pointer hover:text-red-500"
+            aria-label="delete"
+            className="text-gray-400 cursor-pointer hover:text-red-500 flex items-center justify-center"
           >
-            Delete
+            <Trash2 />
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={toggleFlagged}
+            data-testid={`flag-button-${todo.id}`}
+            aria-label="flag"
+            className="text-gray-400 cursor-pointer hover:text-orange-500 flex items-center justify-center"
+          >
+            <Flag />
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {todo.flagged && (
+        <Flag
+          className="absolute top-1/2 right-2 transform -translate-y-1/2 w-4 h-4 text-orange-500"
+          role="icon"
+          aria-label="flag"
+        /> // フラグが立っている場合に旗アイコンを表示
+      )}
     </form>
   );
 }
