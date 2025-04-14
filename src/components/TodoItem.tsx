@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Todo } from "@/types/todo";
 import { MoreHorizontal, Flag, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTodoStore } from "@/lib/store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,17 +13,16 @@ import {
 
 type TodoItemProps = {
   todo: Todo;
-  updateTodo: (updatedTodo: Todo) => void;
-  deleteTodo: (id: string) => void;
 };
 
-export default function TodoItem({
-  todo,
-  updateTodo,
-  deleteTodo,
-}: TodoItemProps) {
+export default function TodoItem({ todo }: TodoItemProps) {
   const [editedTitle, setEditedTitle] = useState(todo.title);
   const inputRef = useRef<HTMLInputElement>(null); // 入力フィールドへの参照を作成
+
+  const updateTodo = useTodoStore((state) => state.updateTodo);
+  const deleteTodo = useTodoStore((state) => state.deleteTodo);
+  const toggleCompleted = useTodoStore((state) => state.toggleCompleted);
+  const toggleFlagged = useTodoStore((state) => state.toggleFlagged);
 
   // タスクを保存する関数
   const handleSave = () => {
@@ -31,46 +31,22 @@ export default function TodoItem({
       return;
     }
 
-    const updatedTodo = {
+    updateTodo({
       ...todo,
       title: editedTitle,
-    };
-
-    updateTodo(updatedTodo); // タスクを更新
+    }); // タスクを更新
   };
 
   // フォーム送信時の処理（Enterキーで保存）
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // フォームのデフォルトの動作を防ぐ
     handleSave(); // タスクを保存
-
-    // フォーカスを外す
-    inputRef.current?.blur();
+    inputRef.current?.blur(); // フォーカスを外す
   };
 
   // フォーカスが外れた時の処理（Blurイベント）
   const handleBlur = () => {
     handleSave(); // タスクを保存
-  };
-
-  // 完了状態を切り替える関数
-  const toggleCompleted = () => {
-    const updatedTodo = {
-      ...todo,
-      completed: !todo.completed,
-    };
-
-    updateTodo(updatedTodo);
-  };
-
-  // フラグ状態を切り替える関数
-  const toggleFlagged = () => {
-    const updatedTodo = {
-      ...todo,
-      flagged: !todo.flagged,
-    };
-
-    updateTodo(updatedTodo);
   };
 
   return (
@@ -80,7 +56,7 @@ export default function TodoItem({
     >
       <Checkbox
         checked={todo.completed}
-        onCheckedChange={toggleCompleted}
+        onCheckedChange={() => toggleCompleted(todo.id)}
         className="rounded-full size-5 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
       />
       <input
@@ -114,7 +90,7 @@ export default function TodoItem({
             <Trash2 />
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={toggleFlagged}
+            onClick={() => toggleFlagged(todo.id)}
             data-testid={`flag-button-${todo.id}`}
             aria-label="flag"
             className="text-gray-400 cursor-pointer hover:text-orange-500 flex items-center justify-center"
