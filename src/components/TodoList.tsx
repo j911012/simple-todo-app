@@ -1,33 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useTodoStore } from "@/lib/store";
 import TodoItem from "@/components/TodoItem";
-import type { Todo, TodoList } from "@/types/todo";
 
-type TodoListProps = {
-  initialTodos?: Todo[]; // テストでモックデータを渡す際に使用
-};
-
-export default function TodoList({ initialTodos = [] }: TodoListProps) {
-  const [todos, setTodos] = useState<TodoList>(initialTodos);
+export default function TodoList() {
+  // Zustandストアから todos, addTodo を取得
+  const todos = useTodoStore((state) => state.todos);
+  const addTodo = useTodoStore((state) => state.addTodo);
   const [inputValue, setInputValue] = useState("");
 
   console.log(todos);
 
-  // sessionStorageに保存する関数
-  const saveToSessionStorage = (todos: Todo[]) => {
-    // TodosをJSON形式で sessionStorage に保存
-    sessionStorage.setItem("todos", JSON.stringify(todos));
-  };
-
-  useEffect(() => {
-    // 初回レンダリング時に sessionStorage から Todos を取得
-    const storedTodos = sessionStorage.getItem("todos");
-    if (storedTodos) {
-      setTodos(JSON.parse(storedTodos));
-    }
-  }, []); // 初回レンダリング時のみ実行
-
-  // 新しいタスクを追加する関数
-  const addTodo = () => {
+  // フォームの送信を処理する関数
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault(); // フォームのデフォルトの動作を防ぐ
     if (inputValue.trim() === "") return; // 空の入力は無視
 
     const newTodo = {
@@ -37,32 +22,8 @@ export default function TodoList({ initialTodos = [] }: TodoListProps) {
       flagged: false,
     };
 
-    const updatedTodos = [...todos, newTodo];
-    setTodos(updatedTodos); // ステートを更新
-    saveToSessionStorage(updatedTodos); // sessionStorage に保存
+    addTodo(newTodo);
     setInputValue(""); // 入力フィールドをクリア
-  };
-
-  // タスクを削除する関数
-  const deleteTodo = (id: string) => {
-    const updatedTodos = todos.filter((todo) => todo.id !== id);
-    setTodos(updatedTodos);
-    saveToSessionStorage(updatedTodos);
-  };
-
-  // タスクを更新する関数
-  const updateTodo = (updatedTodo: Todo) => {
-    const updatedTodos = todos.map((todo) =>
-      todo.id === updatedTodo.id ? updatedTodo : todo
-    );
-    setTodos(updatedTodos);
-    saveToSessionStorage(updatedTodos);
-  };
-
-  // フォームの送信を処理する関数
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // フォームのデフォルトの動作を防ぐ
-    addTodo();
   };
 
   return (
@@ -84,12 +45,7 @@ export default function TodoList({ initialTodos = [] }: TodoListProps) {
       <div className="pt-24 h-[calc(100vh-80px)] overflow-y-auto p-4">
         <div className="max-w-[36rem] mx-auto space-y-4">
           {todos.map((todo) => (
-            <TodoItem
-              key={todo.id}
-              todo={todo}
-              updateTodo={updateTodo}
-              deleteTodo={deleteTodo}
-            />
+            <TodoItem key={todo.id} todo={todo} />
           ))}
         </div>
       </div>
