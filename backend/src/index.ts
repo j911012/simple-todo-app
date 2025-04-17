@@ -1,34 +1,22 @@
-// src/index.ts
 import express from "express";
-import { prisma } from "./lib/prisma"; // さっき作ったやつ
+import { config } from "dotenv";
+import cors from "cors";
+import todoRoutes from "./routes/todos";
+
+config(); // .env 読み込み
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.use("/api/todos", todoRoutes);
+
+app.get("/", (_req, res) => {
   res.send("Hello from Express + Prisma!");
 });
 
-// DB接続してテストでタスクを1件作るルート
-app.post("/test", async (req, res) => {
-  try {
-    const todo = await prisma.todo.create({
-      data: {
-        title: "Prismaから作成されたタスク",
-        completed: false,
-        flagged: false,
-      },
-    });
-
-    res.json(todo);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "DB error" });
-  }
-});
-
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server ready at http://localhost:${PORT}`);
 });
