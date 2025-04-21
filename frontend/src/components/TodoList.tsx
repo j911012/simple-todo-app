@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTodoStore } from "@/lib/store";
 import TodoItem from "@/components/TodoItem";
 
 export default function TodoList() {
-  // Zustandストアから todos, addTodo を取得
+  // Zustandストアから todos, addTodo, fetchTodos を取得
   const todos = useTodoStore((state) => state.todos);
+  const fetchTodos = useTodoStore((state) => state.fetchTodos);
   const addTodo = useTodoStore((state) => state.addTodo);
   const [inputValue, setInputValue] = useState("");
 
-  console.log(todos);
+  // 初期レンダリング時に Todo 一覧を取得
+  useEffect(() => {
+    fetchTodos();
+  }, [fetchTodos]);
 
   // フォームの送信を処理する関数
   const handleSubmit = (e: React.FormEvent) => {

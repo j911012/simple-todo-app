@@ -8,6 +8,7 @@ type TodoStore = {
   deleteTodo: (id: string) => void;
   toggleCompleted: (id: string) => void;
   toggleFlagged: (id: string) => void;
+  fetchTodos: () => Promise<void>;
 };
 
 // sessionStorage からデータを読み込む関数
@@ -65,4 +66,17 @@ export const useTodoStore = create<TodoStore>((set) => ({
       saveTodosToSessionStorage(updatedTodos);
       return { todos: updatedTodos };
     }),
+
+  fetchTodos: async () => {
+    try {
+      const response = await fetch("http://localhost:3000/api/todos");
+      if (!response.ok) {
+        throw new Error("Failed to fetch todos");
+      }
+      const todos = await response.json();
+      set({ todos: todos }); // APIから取得したデータでストアを更新
+    } catch (error) {
+      console.error("Failed to fetch todos:", error);
+    }
+  },
 }));
