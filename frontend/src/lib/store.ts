@@ -11,13 +11,10 @@ type TodoStore = {
   fetchTodos: () => Promise<void>;
 };
 
-// sessionStorage にデータを保存する関数
-const saveTodosToSessionStorage = (todos: Todo[]) => {
-  sessionStorage.setItem("todos", JSON.stringify(todos));
-};
-
 // Zustandストアの作成（Todo）
-export const useTodoStore = create<TodoStore>((set) => ({
+export const useTodoStore = create<TodoStore>((set, get) => ({
+  // set: 状態を更新するための関数
+  // get: 現在の状態を取得するための関数
   todos: [],
 
   addTodo: async (title) => {
@@ -34,7 +31,7 @@ export const useTodoStore = create<TodoStore>((set) => ({
 
       const newTodo: Todo = await res.json();
 
-      set((state) => ({ todos: [...state.todos, newTodo] }));
+      set((state) => ({ todos: [newTodo, ...state.todos] }));
     } catch (error) {
       console.error("Error adding todo:", error);
     }
@@ -83,23 +80,23 @@ export const useTodoStore = create<TodoStore>((set) => ({
     }
   },
 
-  toggleCompleted: (id) =>
-    set((state) => {
-      const updatedTodos = state.todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      );
-      saveTodosToSessionStorage(updatedTodos);
-      return { todos: updatedTodos };
-    }),
+  toggleCompleted: async (id) => {
+    const todo = get().todos.find((todo) => todo.id === id); // todosから該当のtodoを取得
 
-  toggleFlagged: (id) =>
-    set((state) => {
-      const updatedTodos = state.todos.map((todo) =>
-        todo.id === id ? { ...todo, flagged: !todo.flagged } : todo
-      );
-      saveTodosToSessionStorage(updatedTodos);
-      return { todos: updatedTodos };
-    }),
+    if (!todo) return;
+
+    const updatedTodo = { ...todo, completed: !todo.completed };
+    await get().updateTodo(updatedTodo); // APIを呼び出して更新
+  },
+
+  toggleFlagged: async (id) => {
+    const todo = get().todos.find((todo) => todo.id === id); // todosから該当のtodoを取得
+
+    if (!todo) return;
+
+    const updatedTodo = { ...todo, flagged: !todo.flagged };
+    await get().updateTodo(updatedTodo); // APIを呼び出して更新
+  },
 
   fetchTodos: async () => {
     try {
