@@ -19,14 +19,7 @@ export default function TodoList() {
     e.preventDefault(); // フォームのデフォルトの動作を防ぐ
     if (inputValue.trim() === "") return; // 空の入力は無視
 
-    const newTodo = {
-      id: crypto.randomUUID(),
-      title: inputValue,
-      completed: false,
-      flagged: false,
-    };
-
-    addTodo(newTodo);
+    addTodo(inputValue);
     setInputValue(""); // 入力フィールドをクリア
   };
 
