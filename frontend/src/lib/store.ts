@@ -4,17 +4,11 @@ import type { Todo } from "@/types/todo";
 type TodoStore = {
   todos: Todo[];
   addTodo: (title: string) => Promise<void>;
-  updateTodo: (updatedTodo: Todo) => void;
-  deleteTodo: (id: string) => void;
+  updateTodo: (updatedTodo: Todo) => Promise<void>;
+  deleteTodo: (id: string) => Promise<void>;
   toggleCompleted: (id: string) => void;
   toggleFlagged: (id: string) => void;
   fetchTodos: () => Promise<void>;
-};
-
-// sessionStorage からデータを読み込む関数
-const loadTodosFromSessionStorage = (): Todo[] => {
-  const storedTodos = sessionStorage.getItem("todos");
-  return storedTodos ? JSON.parse(storedTodos) : [];
 };
 
 // sessionStorage にデータを保存する関数
@@ -24,7 +18,7 @@ const saveTodosToSessionStorage = (todos: Todo[]) => {
 
 // Zustandストアの作成（Todo）
 export const useTodoStore = create<TodoStore>((set) => ({
-  todos: loadTodosFromSessionStorage(),
+  todos: [],
 
   addTodo: async (title) => {
     try {
@@ -46,21 +40,48 @@ export const useTodoStore = create<TodoStore>((set) => ({
     }
   },
 
-  updateTodo: (updatedTodo) =>
-    set((state) => {
-      const updatedTodos = state.todos.map((todo) =>
-        todo.id === updatedTodo.id ? updatedTodo : todo
+  updateTodo: async (updatedTodo) => {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/todos/${updatedTodo.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedTodo),
+        }
       );
-      saveTodosToSessionStorage(updatedTodos);
-      return { todos: updatedTodos };
-    }),
 
-  deleteTodo: (id) =>
-    set((state) => {
-      const updatedTodos = state.todos.filter((todo) => todo.id !== id);
-      saveTodosToSessionStorage(updatedTodos);
-      return { todos: updatedTodos };
-    }),
+      if (!res.ok) throw new Error("Failed to update todo");
+
+      const updated = await res.json();
+
+      set((state) => ({
+        todos: state.todos.map((todo) =>
+          todo.id === updatedTodo.id ? updated : todo
+        ),
+      }));
+    } catch (error) {
+      console.error("Error updating todo:", error);
+    }
+  },
+
+  deleteTodo: async (id) => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/todos/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete todo");
+
+      set((state) => ({
+        todos: state.todos.filter((todo) => todo.id !== id),
+      }));
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+    }
+  },
 
   toggleCompleted: (id) =>
     set((state) => {
