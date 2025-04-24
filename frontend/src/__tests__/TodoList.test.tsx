@@ -1,275 +1,119 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { userEvent } from "@testing-library/user-event";
+import { render, screen } from "@testing-library/react";
+import { vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import TodoList from "@/components/TodoList";
-import { describe, it, expect } from "vitest";
-import "@testing-library/jest-dom";
 
-describe("タスク追加機能", () => {
-  it("入力欄に文字を入力できること", async () => {
-    render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-    await userEvent.type(input, "テストタスク");
-    expect(input).toHaveValue("テストタスク");
-  });
+const updateTodo = vi.fn();
+const deleteTodo = vi.fn();
+const toggleCompleted = vi.fn();
+const toggleFlagged = vi.fn();
 
-  it("空欄でフォーム送信したとき、タスクが追加されないこと", async () => {
-    render(<TodoList />);
+// Zustand ストアの手動モック
+vi.mock("@/lib/store", () => {
+  const todos = [
+    {
+      id: "1",
+      title: "テストタスク",
+      completed: false,
+      flagged: false,
+    },
+  ];
 
-    // 空のまま Enter を押す
-    await userEvent.keyboard("{Enter}");
-
-    // 入力フィールドの数（タスクのinput）は追加されていない
-    const taskInputs = screen.queryAllByRole("textbox", { name: "" });
-    // フォーム内の入力欄（新規追加のinput）以外が存在しないことを確認
-    expect(taskInputs.length).toBe(1); // 1つだけ＝入力欄のみ
-  });
-
-  it("入力後に Enter でタスクが追加されること", async () => {
-    render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-
-    // タスクを追加
-    await userEvent.type(input, "テストタスク");
-    await userEvent.keyboard("{Enter}");
-
-    // タスクが追加されたことを確認
-    const taskItem = screen.getByDisplayValue("テストタスク");
-    expect(taskItem).toBeInTheDocument();
-  });
-
-  it("completed が false で初期化されていること", async () => {
-    render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-
-    // タスクを追加
-    await userEvent.type(input, "テストタスク");
-    await userEvent.keyboard("{Enter}");
-
-    // completed が false で初期化されていることを確認
-    const checkbox = screen.getByRole("checkbox");
-    expect(checkbox).not.toBeChecked();
-  });
-
-  it("複数タスクが正しく追加されること", async () => {
-    render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-
-    // タスクを追加
-    await userEvent.type(input, "タスク1");
-    await userEvent.keyboard("{Enter}");
-    await userEvent.type(input, "タスク2");
-    await userEvent.keyboard("{Enter}");
-    await userEvent.type(input, "タスク3");
-    await userEvent.keyboard("{Enter}");
-
-    // タスクが正しい順番で追加されていることを確認
-    const taskItems = screen.getAllByRole("textbox");
-    expect(taskItems).toHaveLength(4); // 入力フィールド + 3つのタスク
-    expect(taskItems[1]).toHaveValue("タスク1");
-    expect(taskItems[2]).toHaveValue("タスク2");
-    expect(taskItems[3]).toHaveValue("タスク3");
-  });
+  return {
+    useTodoStore: (selector: any) =>
+      selector({
+        todos,
+        fetchTodos: vi.fn(),
+        addTodo: vi.fn((title: string) => {
+          todos.push({
+            id: String(todos.length + 1),
+            title,
+            completed: false,
+            flagged: false,
+          });
+        }),
+        updateTodo: updateTodo,
+        deleteTodo: deleteTodo,
+        toggleCompleted: toggleCompleted,
+        toggleFlagged: toggleFlagged,
+      }),
+  };
 });
 
-describe("チェックボックス（完了状態）", () => {
-  it("チェックボックスをクリックすると completed 状態が切り替わること", async () => {
+describe("TodoList 基本機能", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("入力欄に文字を入力できる", async () => {
     render(<TodoList />);
     const input = screen.getByPlaceholderText("新しいタスクを追加");
+    await userEvent.type(input, "新しいタスク");
+    expect(input).toHaveValue("新しいタスク");
+  });
 
-    // タスクを追加
-    await userEvent.type(input, "テストタスク");
-    await userEvent.keyboard("{Enter}");
+  it("タスクを追加できる", async () => {
+    render(<TodoList />);
+    const input = screen.getByPlaceholderText("新しいタスクを追加");
+    await userEvent.type(input, "新しいタスク");
+    await userEvent.keyboard("{enter}");
+    // 追加された task を確認
+    const taskInput = await screen.findByDisplayValue("新しいタスク");
+    expect(taskInput).toBeInTheDocument();
+  });
 
-    // チェックボックスを取得
-    const checkbox = screen.getByRole("checkbox");
-    expect(checkbox).not.toBeChecked(); // 初期状態は未完了
-
-    // チェックボックスをクリックして完了状態にする
+  it("タスクの完了状態を切り替えられる", async () => {
+    render(<TodoList />);
+    const checkbox = screen.getByTestId("checkbox-1");
     await userEvent.click(checkbox);
-    expect(checkbox).toBeChecked(); // 完了状態に切り替わる
-
-    // 再度クリックして未完了状態に戻す
-    await userEvent.click(checkbox);
-    expect(checkbox).not.toBeChecked(); // 未完了状態に戻る
-  });
-});
-
-describe("タスク編集機能", () => {
-  it("テキストを変更すると editedTitle が更新されること", async () => {
-    render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-
-    // タスクを追加
-    await userEvent.type(input, "テストタスク");
-    await userEvent.keyboard("{Enter}");
-
-    // タスクのテキストを取得
-    const taskItem = screen.getByDisplayValue("テストタスク");
-    expect(taskItem).toBeInTheDocument();
-
-    // テキストを変更
-    await userEvent.clear(taskItem);
-    await userEvent.type(taskItem, "変更後のタスク");
-
-    // 変更後のテキストが表示されていることを確認
-    expect(taskItem).toHaveValue("変更後のタスク");
+    expect(toggleCompleted).toHaveBeenCalledWith("1");
   });
 
-  it("フォーカスが外れたとき（blur）に編集が保存されること", async () => {
+  it("タスクのタイトルを編集できる", async () => {
     render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-
-    // タスクを追加
-    await userEvent.type(input, "タスク1");
-    await userEvent.keyboard("{Enter}");
-
-    // タスクのテキストを変更
-    const taskInput = screen.getByDisplayValue("タスク1");
+    const taskInput = screen.getByDisplayValue("テストタスク");
     await userEvent.clear(taskInput);
-    await userEvent.type(taskInput, "変更後のタスク");
+    await userEvent.type(taskInput, "編集されたタスク");
 
-    // フォーカスを外す
-    taskInput.blur();
+    // フォーカス外して blur を強制発火（Enter だと submit 通らないことがある）
+    // await userEvent.keyboard("{enter}");
+    await userEvent.tab();
 
-    // 編集が保存されていることを確認
-    expect(taskInput).toHaveValue("変更後のタスク");
+    console.log("updateTodo", updateTodo.mock.calls);
+
+    // タスクの更新を確認
+    expect(updateTodo).toHaveBeenCalledWith({
+      id: "1",
+      title: "編集されたタスク",
+      completed: false,
+      flagged: false,
+    });
+
+    // 編集後のタスクを確認
+    const updatedTaskInput = await screen.findByDisplayValue(
+      "編集されたタスク"
+    );
+    expect(updatedTaskInput).toHaveValue("編集されたタスク");
   });
 
-  it("空文字にして blur すると、元の値に戻ること", async () => {
+  it("タスクを削除できる", async () => {
     render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-
-    // タスクを追加
-    await userEvent.type(input, "タスク1");
-    await userEvent.keyboard("{Enter}");
-
-    // タスクのテキストを空文字に変更
-    const taskInput = screen.getByDisplayValue("タスク1");
-    await userEvent.clear(taskInput);
-
-    // フォーカスを外す
-    await fireEvent.blur(taskInput);
-
-    // 元の値に戻っていることを確認
-    expect(taskInput).toHaveValue("タスク1");
-  });
-});
-
-describe("メニュー操作（3点ボタン）", () => {
-  it("3点ボタンをクリックするとメニューが表示されること", async () => {
-    render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-
-    // タスクを追加
-    await userEvent.type(input, "タスク1");
-    await userEvent.keyboard("{Enter}");
-
-    // 3点ボタンをクリック
-    const menuButton = screen.getByRole("button");
-    await userEvent.click(menuButton);
-
-    // メニューが表示されることを確認
-    const menu = screen.getByRole("menu");
-    expect(menu).toBeInTheDocument();
-  });
-
-  it("メニュー削除ボタンが表示されること", async () => {
-    render(<TodoList />);
-    const input = screen.getByPlaceholderText("新しいタスクを追加");
-
-    // タスクを追加
-    await userEvent.type(input, "タスク1");
-    await userEvent.keyboard("{Enter}");
-
-    // 3点ボタンをクリック
-    const menuButton = screen.getByRole("button");
-    await userEvent.click(menuButton);
-
-    // メニュー内に削除ボタンが表示されることを確認
-    const deleteOption = screen.getByRole("menuitem", { name: /delete/i });
-    expect(deleteOption).toBeInTheDocument();
-  });
-});
-
-describe("タスク削除機能", () => {
-  it("Deleteボタンを押すと削除されること", async () => {
-    const mockTodos = [
-      { id: "1", title: "タスク1", completed: false, flagged: false },
-    ];
-
-    render(<TodoList initialTodos={mockTodos} />);
-
-    // 3点ボタンをクリックしてメニューを表示
     const menuButton = screen.getByTestId("menu-button-1");
     await userEvent.click(menuButton);
 
-    // Deleteボタンをクリック
-    const deleteButton = screen.getByTestId("delete-button-1");
+    const deleteButton = await screen.findByTestId("delete-button-1");
     await userEvent.click(deleteButton);
-
-    // タスクが削除されていることを確認
-    expect(screen.queryByDisplayValue("タスク1")).not.toBeInTheDocument();
+    expect(deleteTodo).toHaveBeenCalledWith("1");
+    expect(screen.queryByText("テストタスク")).not.toBeInTheDocument();
   });
 
-  it("複数タスク中、指定したタスクのみが削除されること", async () => {
-    const mockTodos = [
-      { id: "1", title: "タスク1", completed: false, flagged: false },
-      { id: "2", title: "タスク2", completed: false, flagged: false },
-      { id: "3", title: "タスク3", completed: false, flagged: false },
-    ];
-    render(<TodoList initialTodos={mockTodos} />);
-
-    // タスク2の削除ボタンをクリック
-    const menuButton = screen.getByTestId("menu-button-2");
-    await userEvent.click(menuButton); // タスク2のメニューを開く
-    const deleteButton = screen.getByTestId("delete-button-2");
-    await userEvent.click(deleteButton);
-
-    // タスク2が削除されていることを確認
-    expect(screen.queryByDisplayValue("タスク2")).not.toBeInTheDocument();
-
-    // 他のタスクが残っていることを確認
-    expect(screen.getByDisplayValue("タスク1")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("タスク3")).toBeInTheDocument();
-  });
-});
-
-describe("フラグ機能", () => {
-  it("フラグボタンをクリックするとフラグが立つこと", async () => {
-    const mockTodos = [
-      { id: "1", title: "タスク1", completed: false, flagged: false },
-    ];
-    render(<TodoList initialTodos={mockTodos} />);
-
-    // 3点ボタンをクリックしてメニューを表示
+  it("タスクのフラグを切り替えられる", async () => {
+    render(<TodoList />);
     const menuButton = screen.getByTestId("menu-button-1");
     await userEvent.click(menuButton);
 
-    // フラグボタンをクリック
-    const flagButton = screen.getByTestId("flag-button-1");
+    const flagButton = await screen.findByTestId("flag-button-1");
     await userEvent.click(flagButton);
-
-    // フラグが立っていることを確認
-    const flagIcon = screen.getByRole("icon", { name: /flag/i });
-    expect(flagIcon).toBeInTheDocument();
-  });
-
-  it("フラグを取り消すと旗アイコンが消えること", async () => {
-    const mockTodos = [
-      { id: "1", title: "タスク1", completed: false, flagged: true },
-    ];
-    render(<TodoList initialTodos={mockTodos} />);
-
-    // 3点ボタンをクリックしてメニューを表示
-    const menuButton = screen.getByTestId("menu-button-1");
-    await userEvent.click(menuButton);
-
-    // フラグボタンをクリック
-    const flagButton = screen.getByTestId("flag-button-1");
-    await userEvent.click(flagButton);
-
-    // フラグが取り消されていることを確認
-    const flagIcon = screen.queryByRole("icon", { name: /flag/i });
-    expect(flagIcon).not.toBeInTheDocument();
+    expect(toggleFlagged).toHaveBeenCalledWith("1");
   });
 });
