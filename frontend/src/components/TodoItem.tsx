@@ -55,6 +55,7 @@ export default function TodoItem({ todo }: TodoItemProps) {
       className="relative flex items-center gap-3 border border-gray-300 rounded-xl pl-6 pr-8 py-4 shadow-md bg-white"
     >
       <Checkbox
+        data-testId={`checkbox-${todo.id}`}
         checked={todo.completed}
         onCheckedChange={() => toggleCompleted(todo.id)}
         className="rounded-full size-5 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
