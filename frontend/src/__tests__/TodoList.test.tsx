@@ -1,7 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { vi } from "vitest";
+import * as storeModule from "@/lib/store";
 import userEvent from "@testing-library/user-event";
 import TodoList from "@/components/TodoList";
+import Sidebar from "@/components/Sidebar";
+
+// vi.mockではなくvi.spyOnを使用
+const useTodoStoreSpy = vi.spyOn(storeModule, "useTodoStore");
 
 const updateTodo = vi.fn();
 const deleteTodo = vi.fn();
@@ -10,6 +15,13 @@ const toggleFlagged = vi.fn();
 
 // Zustand ストアの手動モック
 vi.mock("@/lib/store", () => {
+  // テスト間でリセットしたいので mutable に
+  let filterFlagged = false;
+
+  const setFilterFlagged = vi.fn((flag: boolean) => {
+    filterFlagged = flag;
+  });
+
   const todos = [
     {
       id: "1",
@@ -17,12 +29,23 @@ vi.mock("@/lib/store", () => {
       completed: false,
       flagged: false,
     },
+    {
+      id: "2",
+      title: "フラグ付きタスク",
+      completed: false,
+      flagged: true,
+    },
   ];
 
   return {
     useTodoStore: (selector: any) =>
       selector({
+        // 状態
         todos,
+        isLoading: false,
+        filterFlagged,
+        // アクション
+        setFilterFlagged: setFilterFlagged,
         fetchTodos: vi.fn(),
         addTodo: vi.fn((title: string) => {
           todos.push({
@@ -115,5 +138,64 @@ describe("TodoList 基本機能", () => {
     const flagButton = await screen.findByTestId("flag-button-1");
     await userEvent.click(flagButton);
     expect(toggleFlagged).toHaveBeenCalledWith("1");
+  });
+});
+
+describe("フラグ付きフィルタ機能", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("初期状態では全てのタスクが表示される", () => {
+    render(
+      <>
+        <Sidebar />
+        <TodoList />
+      </>
+    );
+
+    expect(screen.getByDisplayValue("テストタスク")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("フラグ付きタスク")).toBeInTheDocument();
+  });
+
+  it("フィルタがオンの場合はフラグ付きのタスクのみ表示される", async () => {
+    // フィルタをオンにする
+    useTodoStoreSpy.mockImplementation((selector) =>
+      selector({
+        todos: [
+          {
+            id: "1",
+            title: "テストタスク",
+            completed: false,
+            flagged: false,
+          },
+          {
+            id: "2",
+            title: "フラグ付きタスク",
+            completed: false,
+            flagged: true,
+          },
+        ],
+        isLoading: false,
+        filterFlagged: true, // フィルタをオンにする
+        setFilterFlagged: vi.fn(),
+        fetchTodos: vi.fn(),
+        addTodo: vi.fn(),
+        updateTodo: vi.fn(),
+        deleteTodo: vi.fn(),
+        toggleCompleted: vi.fn(),
+        toggleFlagged: vi.fn(),
+      })
+    );
+
+    render(
+      <>
+        <Sidebar />
+        <TodoList />
+      </>
+    );
+    // フラグ付きタスクのみ表示される
+    expect(screen.queryByDisplayValue("テストタスク")).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue("フラグ付きタスク")).toBeInTheDocument();
   });
 });

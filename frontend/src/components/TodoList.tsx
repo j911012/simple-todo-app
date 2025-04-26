@@ -3,10 +3,12 @@ import { useTodoStore } from "@/lib/store";
 import TodoItem from "@/components/TodoItem";
 
 export default function TodoList() {
-  // Zustandストアから todos, addTodo, fetchTodos を取得
   const todos = useTodoStore((state) => state.todos);
+  const isLoading = useTodoStore((state) => state.isLoading);
   const fetchTodos = useTodoStore((state) => state.fetchTodos);
   const addTodo = useTodoStore((state) => state.addTodo);
+  // storeにあるフィルタの状態を取得
+  const filterFlagged = useTodoStore((state) => state.filterFlagged);
   const [inputValue, setInputValue] = useState("");
 
   // 初期レンダリング時に Todo 一覧を取得
@@ -22,6 +24,11 @@ export default function TodoList() {
     addTodo(inputValue);
     setInputValue(""); // 入力フィールドをクリア
   };
+
+  // フィルタリングされた Todo 一覧を取得
+  const visibleTodos = filterFlagged
+    ? todos.filter((todo) => todo.flagged)
+    : todos;
 
   return (
     <div className="relative flex-1 h-screen ml-64">
@@ -40,11 +47,23 @@ export default function TodoList() {
       </div>
 
       <div className="pt-24 h-[calc(100vh-80px)] overflow-y-auto p-4">
-        <div className="max-w-[36rem] mx-auto space-y-4">
-          {todos.map((todo) => (
-            <TodoItem key={todo.id} todo={todo} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-center text-gray-500">読み込み中...</p>
+          </div>
+        ) : visibleTodos.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-center text-gray-500">
+              表示するタスクがありません
+            </p>
+          </div>
+        ) : (
+          <div className="max-w-[36rem] mx-auto space-y-4">
+            {visibleTodos.map((todo) => (
+              <TodoItem key={todo.id} todo={todo} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

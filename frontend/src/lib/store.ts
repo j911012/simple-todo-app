@@ -10,6 +10,9 @@ type TodoStore = {
   toggleCompleted: (id: string) => void;
   toggleFlagged: (id: string) => void;
   fetchTodos: () => Promise<void>;
+  filterFlagged: boolean;
+  setFilterFlagged: (flag: boolean) => void;
+  isLoading: boolean;
 };
 
 // Zustandストアの作成（Todo）
@@ -17,6 +20,10 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
   // set: 状態を更新するための関数
   // get: 現在の状態を取得するための関数
   todos: [],
+  isLoading: false, // ローディング状態を管理するためのフラグ
+  filterFlagged: false,
+
+  setFilterFlagged: (flag: boolean) => set({ filterFlagged: flag }), // フィルタの状態を更新
 
   addTodo: async (title) => {
     try {
@@ -74,12 +81,15 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
   },
 
   fetchTodos: async () => {
+    set({ isLoading: true }); // ローディング状態を開始
     try {
       const res = await api.get<Todo[]>("/todos");
       const todos = res.data;
       set({ todos: todos }); // APIから取得したデータでストアを更新
     } catch (error) {
       console.error("Failed to fetch todos:", error);
+    } finally {
+      set({ isLoading: false }); // ローディング状態を終了
     }
   },
 }));

@@ -7,8 +7,18 @@ import {
   Search,
   CirclePlus,
 } from "lucide-react";
+import { useTodoStore } from "@/lib/store";
 
 export default function Sidebar() {
+  // Zustandストアからフィルタの状態を取得
+  const filterFlagged = useTodoStore((state) => state.filterFlagged);
+  const setFilterFlagged = useTodoStore((state) => state.setFilterFlagged);
+
+  // フィルタの状態をトグルする関数
+  const toggleFilterFlagged = () => {
+    setFilterFlagged(!filterFlagged);
+  };
+
   return (
     <aside className="fixed top-0 left-0 w-64 h-screen bg-gray-100 p-4 shadow-md">
       <div className="space-y-4">
@@ -29,7 +39,12 @@ export default function Sidebar() {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-200 cursor-pointer">
+          <div
+            className={`flex items-center gap-3 p-2 rounded-lg  cursor-pointer ${
+              filterFlagged ? "bg-gray-200" : "hover:bg-gray-200"
+            }`}
+            onClick={toggleFilterFlagged}
+          >
             <Flag className="w-5 h-5 text-orange-500" />
             <span className="text-gray-800 font-medium">フラグ付き</span>
           </div>
