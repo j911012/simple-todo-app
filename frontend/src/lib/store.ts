@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Todo } from "@/types/todo";
+import api from "@/lib/api";
 
 type TodoStore = {
   todos: Todo[];
@@ -19,18 +20,10 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
 
   addTodo: async (title) => {
     try {
-      const res = await fetch("http://localhost:3000/api/todos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ title: title }),
+      const res = await api.post<Todo>("/todos", {
+        title: title,
       });
-
-      if (!res.ok) throw new Error("Failed to add todo");
-
-      const newTodo: Todo = await res.json();
-
+      const newTodo = res.data;
       set((state) => ({ todos: [newTodo, ...state.todos] }));
     } catch (error) {
       console.error("Error adding todo:", error);
@@ -39,21 +32,8 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
 
   updateTodo: async (updatedTodo) => {
     try {
-      const res = await fetch(
-        `http://localhost:3000/api/todos/${updatedTodo.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedTodo),
-        }
-      );
-
-      if (!res.ok) throw new Error("Failed to update todo");
-
-      const updated = await res.json();
-
+      const res = await api.put<Todo>(`/todos/${updatedTodo.id}`, updatedTodo);
+      const updated = res.data;
       set((state) => ({
         todos: state.todos.map((todo) =>
           todo.id === updatedTodo.id ? updated : todo
@@ -66,12 +46,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
 
   deleteTodo: async (id) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/todos/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete todo");
-
+      await api.delete(`/todos/${id}`);
       set((state) => ({
         todos: state.todos.filter((todo) => todo.id !== id),
       }));
@@ -100,11 +75,8 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
 
   fetchTodos: async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/todos");
-      if (!response.ok) {
-        throw new Error("Failed to fetch todos");
-      }
-      const todos = await response.json();
+      const res = await api.get<Todo[]>("/todos");
+      const todos = res.data;
       set({ todos: todos }); // APIから取得したデータでストアを更新
     } catch (error) {
       console.error("Failed to fetch todos:", error);
