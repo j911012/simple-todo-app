@@ -19,9 +19,9 @@ router.get("/", async (_req: Request, res: Response) => {
 
 // POST /api/todos - 新しいタスクを追加
 router.post("/", async (req: Request, res: Response) => {
-  const { title } = req.body;
+  const { title, categoryId } = req.body;
 
-  if (!title || title.trim() === "") {
+  if (!title?.trim()) {
     res.status(400).json({ error: "Title is required" });
   }
 
@@ -29,8 +29,7 @@ router.post("/", async (req: Request, res: Response) => {
     const newTodo = await prisma.todo.create({
       data: {
         title,
-        completed: false,
-        flagged: false,
+        categoryId,
       },
     });
     res.status(201).json(newTodo);
