@@ -13,10 +13,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Todo {
+model Category {
   id        String   @id @default(cuid())
-  title     String
-  completed Boolean  @default(false)
-  flagged   Boolean  @default(false)
+  name      String
   createdAt DateTime @default(now())
+  todos     Todo[]
+}
+
+model Todo {
+  id         String    @id @default(cuid())
+  title      String
+  completed  Boolean   @default(false)
+  flagged    Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId String?
 }
