@@ -60,11 +60,23 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
 
   addTodo: async (title) => {
     try {
+      const currentCategoryId = get().currentCategoryId;
       const res = await api.post<Todo>("/todos", {
-        title: title,
+        title,
+        categoryId:
+          currentCategoryId === DEFAULT_CATEGORY_ID ? null : currentCategoryId,
       });
       const newTodo = res.data;
-      set((state) => ({ todos: [newTodo, ...state.todos] }));
+      set((state) => ({
+        todos: [
+          {
+            ...newTodo,
+            // デフォルトカテゴリーの場合はnullではなくDEFAULT_CATEGORY_IDを使用
+            categoryId: newTodo.categoryId || DEFAULT_CATEGORY_ID,
+          },
+          ...state.todos,
+        ],
+      }));
     } catch (error) {
       console.error("Error adding todo:", error);
     }

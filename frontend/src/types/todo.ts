@@ -10,6 +10,7 @@ export type Todo = {
   completed: boolean;
   flagged: boolean;
   categoryId: string;
+  createdAt: string;
 };
 
 export type TodoList = Todo[];

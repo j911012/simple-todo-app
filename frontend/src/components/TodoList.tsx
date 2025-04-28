@@ -3,36 +3,48 @@ import { useTodoStore } from "@/lib/store";
 import TodoItem from "@/components/TodoItem";
 
 export default function TodoList() {
-  const todos = useTodoStore((state) => state.todos);
-  const isLoading = useTodoStore((state) => state.isLoading);
-  const fetchTodos = useTodoStore((state) => state.fetchTodos);
-  const addTodo = useTodoStore((state) => state.addTodo);
-  // storeにあるフィルタの状態を取得
-  const filterFlagged = useTodoStore((state) => state.filterFlagged);
   const [inputValue, setInputValue] = useState("");
+  const {
+    todos,
+    isLoading,
+    fetchTodos,
+    addTodo,
+    filterFlagged,
+    currentCategoryId,
+    categories,
+    DEFAULT_CATEGORY_ID,
+  } = useTodoStore();
 
-  // 初期レンダリング時に Todo 一覧を取得
   useEffect(() => {
     fetchTodos();
   }, [fetchTodos]);
 
-  // フォームの送信を処理する関数
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // フォームのデフォルトの動作を防ぐ
-    if (inputValue.trim() === "") return; // 空の入力は無視
-
-    addTodo(inputValue);
-    setInputValue(""); // 入力フィールドをクリア
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputValue.trim()) {
+      await addTodo(inputValue);
+      setInputValue("");
+    }
   };
 
-  // フィルタリングされた Todo 一覧を取得
-  const visibleTodos = filterFlagged
-    ? todos.filter((todo) => todo.flagged)
-    : todos;
+  // 現在のカテゴリーを取得
+  const currentCategory = categories.find(
+    (cat) => cat.id === currentCategoryId
+  );
+
+  // フィルタリングされたTodo一覧を取得
+  const visibleTodos = todos
+    .filter((todo) => {
+      // カテゴリーIDが未設定の場合はデフォルトカテゴリーとして扱う
+      const todoCategoryId = todo.categoryId || DEFAULT_CATEGORY_ID;
+      return todoCategoryId === currentCategoryId;
+    })
+    .filter((todo) => !filterFlagged || todo.flagged);
 
   return (
     <div className="relative flex-1 h-screen ml-64">
-      <div className="fixed top-0 left-64 w-[calc(100%-16rem)] shadow-md p-4 z-10 bg-gray-100">
+      <div className="fixed top-0 left-64 right-0 shadow-md p-4 z-10 bg-gray-100">
+        <h2 className="text-xl font-bold mb-4">{currentCategory?.name}</h2>
         <form onSubmit={handleSubmit} className="max-w-[36rem] mx-auto">
           <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-3 bg-white">
             <input
@@ -46,7 +58,7 @@ export default function TodoList() {
         </form>
       </div>
 
-      <div className="pt-24 h-[calc(100vh-80px)] overflow-y-auto p-4">
+      <div className="pt-36 px-4 pb-4">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-center text-gray-500">読み込み中...</p>
