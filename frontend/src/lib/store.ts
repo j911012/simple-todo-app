@@ -17,6 +17,7 @@ type TodoStore = {
   filterFlagged: boolean;
   setFilterFlagged: (flag: boolean) => void;
   isLoading: boolean;
+  fetchCategories: () => Promise<void>; // 追加
 };
 
 // デフォルトのカテゴリID
@@ -41,11 +42,14 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
   setFilterFlagged: (flag: boolean) => set({ filterFlagged: flag }), // フィルタの状態を更新
   addCategory: async (name) => {
     try {
-      const res = await api.post<Category>("/categories", {
-        name: name,
-      });
+      const res = await api.post<Category>("/categories", { name });
       set((state) => ({
-        categories: [...state.categories, res.data],
+        categories: [
+          // デフォルトカテゴリーを維持
+          state.categories[0],
+          ...state.categories.slice(1),
+          res.data,
+        ],
       }));
     } catch (error) {
       console.error("Error adding category:", error);
@@ -119,6 +123,25 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       console.error("Failed to fetch todos:", error);
     } finally {
       set({ isLoading: false }); // ローディング状態を終了
+    }
+  },
+
+  fetchCategories: async () => {
+    try {
+      const res = await api.get<Category[]>("/categories");
+      set((state) => ({
+        categories: [
+          // デフォルトカテゴリーは常に先頭
+          {
+            id: DEFAULT_CATEGORY_ID,
+            name: "リマインダー",
+            createdAt: new Date().toISOString(),
+          },
+          ...res.data,
+        ],
+      }));
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
     }
   },
 }));

@@ -8,15 +8,35 @@ import {
   CirclePlus,
 } from "lucide-react";
 import { useTodoStore } from "@/lib/store";
+import AddCategoryModal from "./AddCategoryModal";
+import { useRef, useEffect } from "react";
 
 export default function Sidebar() {
-  // Zustandストアからフィルタの状態を取得
+  const modalRef = useRef<HTMLDialogElement>(null);
   const filterFlagged = useTodoStore((state) => state.filterFlagged);
   const setFilterFlagged = useTodoStore((state) => state.setFilterFlagged);
+  const categories = useTodoStore((state) => state.categories);
+  const currentCategoryId = useTodoStore((state) => state.currentCategoryId);
+  const setCurrentCategoryId = useTodoStore(
+    (state) => state.setCurrentCategoryId
+  );
+  const fetchCategories = useTodoStore((state) => state.fetchCategories);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   // フィルタの状態をトグルする関数
   const toggleFilterFlagged = () => {
     setFilterFlagged(!filterFlagged);
+  };
+
+  const handleOpenModal = () => {
+    modalRef.current?.showModal();
+  };
+
+  const handleCloseModal = () => {
+    modalRef.current?.close();
   };
 
   return (
@@ -59,29 +79,35 @@ export default function Sidebar() {
             マイリスト
           </h3>
           <div className="space-y-2">
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-200 cursor-pointer">
-              <List className="w-5 h-5 text-red-500" />
-              <span className="text-gray-800 font-medium">リマインダー</span>
-            </div>
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-200 cursor-pointer">
-              <ShoppingCart className="w-5 h-5 text-green-500" />
-              <span className="text-gray-800 font-medium">買い物</span>
-            </div>
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-200 cursor-pointer">
-              <Briefcase className="w-5 h-5 text-indigo-500" />
-              <span className="text-gray-800 font-medium">仕事</span>
-            </div>
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer ${
+                  currentCategoryId === category.id
+                    ? "bg-gray-200"
+                    : "hover:bg-gray-200"
+                }`}
+                onClick={() => setCurrentCategoryId(category.id)}
+              >
+                <List className="w-5 h-5 text-red-500" />
+                <span className="text-gray-800 font-medium">
+                  {category.name}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       <button
         type="button"
+        onClick={handleOpenModal}
         className="absolute bottom-4 left-4 flex items-center gap-3 w-[calc(100%-2rem)] text-left p-2 rounded-lg hover:bg-gray-200 cursor-pointer"
       >
         <CirclePlus className="w-5 h-5 text-gray-500" />
         <span className="text-gray-500 font-medium">リストを追加</span>
       </button>
+      <AddCategoryModal dialogRef={modalRef} onClose={handleCloseModal} />
     </aside>
   );
 }
